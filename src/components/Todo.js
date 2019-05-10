@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useReducer } from "react";
+import React, { useEffect, useReducer, useRef } from "react";
 import axios from "axios";
 
 const Todo = props => {
-  const [todoName, setTodoName] = useState("");
-  const [submittedTodo, setSubmittedTodo] = useState(null);
+  //const [todoName, setTodoName] = useState("");
+  //const [submittedTodo, setSubmittedTodo] = useState(null);
   //const [todoList, setTodoList] = useState([]);
+  const todoInputRef = useRef();
 
   const todoListReducer = (state, action) => {
     switch (action.type) {
@@ -37,7 +38,7 @@ const Todo = props => {
     return () => {
       console.log("Cleanup");
     };
-  }, [todoName]);
+  }, [todoInputRef]);
 
   const mouseMoveHandler = event => {
     console.log(event.clientX, event.clientY);
@@ -52,41 +53,48 @@ const Todo = props => {
     };
   }, []);
 
-  useEffect(() => {
-    if (submittedTodo) {
-      dispatch({ type: "ADD", payload: submittedTodo });
-    }
-  }, [submittedTodo]);
+  //useEffect(() => {
+  //if (submittedTodo) {
+  //dispatch({ type: "ADD", payload: submittedTodo });
+  //}
+  //}, [submittedTodo]);
 
-  const inputChangeHandler = e => {
-    setTodoName(e.target.value);
-  };
+  //const inputChangeHandler = e => {
+  //setTodoName(e.target.value);
+  //};
 
   const todoAddHandler = () => {
     //setTodoList(todoList.concat(todoName));
+    const todoName = todoInputRef.current.value;
     axios
       .post("https://hooks-jp.firebaseio.com/todos.json", { name: todoName })
       .then(res => {
         setTimeout(() => {
           const todoItem = { id: res.data.name, name: todoName };
-          setSubmittedTodo(todoItem);
+          dispatch({ type: "ADD", payload: todoItem });
         }, 3000);
       });
   };
+
+  const todoRemoveHandler = todoId => {
+    axios
+      .delete(`https://hooks-jp.firebaseio.com/todos/${todoId}.json`)
+      .then(res => {
+        dispatch({ type: "REMOVE", payload: todoId });
+      })
+      .catch(err => console.log(err));
+  };
   return (
     <>
-      <input
-        type="text"
-        placeholer="Todo"
-        onChange={inputChangeHandler}
-        value={todoName}
-      />
+      <input type="text" placeholer="Todo" ref={todoInputRef} />
       <button type="button" onClick={todoAddHandler}>
         Add
       </button>
       <ul>
         {todoList.map(todo => (
-          <li key={todo.id}>{todo.name}</li>
+          <li key={todo.id} onClick={todoRemoveHandler.bind(this, todo.id)}>
+            {todo.name}
+          </li>
         ))}
       </ul>
     </>
