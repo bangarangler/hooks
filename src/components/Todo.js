@@ -1,9 +1,23 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useReducer } from "react";
 import axios from "axios";
 
 const Todo = props => {
   const [todoName, setTodoName] = useState("");
-  const [todoList, setTodoList] = useState([]);
+  const [submittedTodo, setSubmittedTodo] = useState(null);
+  //const [todoList, setTodoList] = useState([]);
+
+  const todoListReducer = (state, action) => {
+    switch (action.type) {
+      case "ADD":
+        return state.concat(action.payload);
+      case "SET":
+        return action.payload;
+      case "REMOVE":
+        return state.filter(todo => todo.id !== action.payload);
+      default:
+        return state;
+    }
+  };
 
   useEffect(() => {
     axios
@@ -15,7 +29,7 @@ const Todo = props => {
         for (const key in todoData) {
           todos.push({ id: key, name: todoData[key].name });
         }
-        setTodoList(todos);
+        dispatch({ type: "SET", payload: todos });
       })
       .catch(err => {
         console.log(err);
@@ -29,6 +43,8 @@ const Todo = props => {
     console.log(event.clientX, event.clientY);
   };
 
+  const [todoList, dispatch] = useReducer(todoListReducer, []);
+
   useEffect(() => {
     document.addEventListener("mousemove", mouseMoveHandler);
     return () => {
@@ -36,19 +52,25 @@ const Todo = props => {
     };
   }, []);
 
+  useEffect(() => {
+    if (submittedTodo) {
+      dispatch({ type: "ADD", payload: submittedTodo });
+    }
+  }, [submittedTodo]);
+
   const inputChangeHandler = e => {
     setTodoName(e.target.value);
   };
 
   const todoAddHandler = () => {
-    setTodoList(todoList.concat(todoName));
+    //setTodoList(todoList.concat(todoName));
     axios
       .post("https://hooks-jp.firebaseio.com/todos.json", { name: todoName })
       .then(res => {
-        console.log(res);
-      })
-      .catch(err => {
-        console.log(err);
+        setTimeout(() => {
+          const todoItem = { id: res.data.name, name: todoName };
+          setSubmittedTodo(todoItem);
+        }, 3000);
       });
   };
   return (
