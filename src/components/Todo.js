@@ -2,13 +2,15 @@ import React, { useState, useEffect, useReducer, useRef, useMemo } from "react";
 import axios from "axios";
 
 import List from "./List.js";
+import { useFormInput } from "../hooks/forms.js";
 
 const Todo = props => {
   const [inputIsValid, setInputIsValid] = useState(false);
   //const [todoName, setTodoName] = useState("");
   //const [submittedTodo, setSubmittedTodo] = useState(null);
   //const [todoList, setTodoList] = useState([]);
-  const todoInputRef = useRef();
+  //const todoInputRef = useRef();
+  const todoInput = useFormInput();
 
   const todoListReducer = (state, action) => {
     switch (action.type) {
@@ -22,6 +24,7 @@ const Todo = props => {
         return state;
     }
   };
+  const [todoList, dispatch] = useReducer(todoListReducer, []);
 
   useEffect(() => {
     axios
@@ -41,7 +44,7 @@ const Todo = props => {
     return () => {
       console.log("Cleanup");
     };
-  }, [todoInputRef]);
+  }, [todoInput.value]);
 
   const mouseMoveHandler = event => {
     console.log(event.clientX, event.clientY);
@@ -54,8 +57,6 @@ const Todo = props => {
       setInputIsValid(true);
     }
   };
-
-  const [todoList, dispatch] = useReducer(todoListReducer, []);
 
   //useEffect(() => {
   //document.addEventListener("mousemove", mouseMoveHandler);
@@ -76,7 +77,7 @@ const Todo = props => {
 
   const todoAddHandler = () => {
     //setTodoList(todoList.concat(todoName));
-    const todoName = todoInputRef.current.value;
+    const todoName = todoInput.value;
     axios
       .post("https://hooks-jp.firebaseio.com/todos.json", { name: todoName })
       .then(res => {
@@ -100,9 +101,11 @@ const Todo = props => {
       <input
         type="text"
         placeholer="Todo"
-        ref={todoInputRef}
-        onChange={inputValidationHandler}
-        style={{ backgroundColor: inputIsValid ? "transparent" : "red" }}
+        onChange={todoInput.onChange}
+        value={todoInput.value}
+        style={{
+          backgroundColor: todoInput.validity === true ? "transparent" : "red"
+        }}
       />
       <button type="button" onClick={todoAddHandler}>
         Add
